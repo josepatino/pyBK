@@ -92,9 +92,7 @@ def getSegmentTable(mask, speechMapping, wLength, wIncr, wShift):
         begs = np.arange(segBeg[i],segEnd[i],wShift)
         bbegs = np.maximum(segBeg[i],begs-wIncr)
         ends = np.minimum(begs+wLength-1,segEnd[i])
-        #ends = np.minimum(begs+wLength-1,np.minimum(segEnd[i],np.argmax(speechMapping)-1))
         eends = np.minimum(ends+wIncr,segEnd[i])
-        #eends = np.minimum(ends+wIncr,np.minimum(segEnd[i],np.argmax(speechMapping)-1))
         segmentTable=np.vstack((segmentTable,np.vstack((bbegs, begs, ends, eends)).T))
     return segmentTable
 

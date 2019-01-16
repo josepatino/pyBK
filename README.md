@@ -16,7 +16,7 @@ If you are using conda:
 $ conda create -n pyBK python=3.6
 $ source activate pyBK
 $ conda install numpy
-$ conda install librosa
+$ conda install -c conda-forge librosa
 $ git clone https://github.com/josepatino/pyBK.git
 ```
 

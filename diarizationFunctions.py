@@ -9,7 +9,7 @@ import numpy as np
     
 def extractFeatures(audioFile,framelength,frameshift,nfilters,ncoeff):
     import librosa
-    y, sr = librosa.load(audioFile,sr=16000)
+    y, sr = librosa.load(audioFile,sr=None)
     frame_length_inSample=framelength*sr
     hop = frameshift*sr
     NFFT=2**np.ceil(np.log2(frame_length_inSample))

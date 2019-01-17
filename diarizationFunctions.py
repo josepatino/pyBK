@@ -134,11 +134,9 @@ def trainKBM(data, windowLength, windowRate, kbmSize):
     kbm[0]=currentGaussianID
     v_dist[currentGaussianID]=-np.inf
     # Compare the current gaussian with the remaining ones
-    print('Selecting gaussian ',end='')
     dpairsAll = cdist(muVector,muVector,metric='cosine')
     np.fill_diagonal(dpairsAll,-np.inf)
     for j in range(1,kbmSize):
-        print(int(j)+1,' ',end='')
         dpairs = dpairsAll[currentGaussianID]    
         v_dist=np.minimum(v_dist,dpairs.T)
         # Once all distances are computed, get the position with highest value
@@ -147,7 +145,6 @@ def trainKBM(data, windowLength, windowRate, kbmSize):
         currentGaussianID = np.where(v_dist==np.max(v_dist))[0]
         kbm[j]=currentGaussianID
         v_dist[currentGaussianID]=-np.inf  
-    print('')
     return [kbm, gmPool]
     
 def getVgMatrix(data, gmPool, kbm, topGaussiansPerFrame):
@@ -283,7 +280,8 @@ def performClustering( speechMapping, segmentTable, segmentBKTable, segmentCVTab
         location = np.nanargmax(clusterSimilarityMatrix)        
         R,C = np.unravel_index(location,(N_init,N_init))        
         ### Then we merge clusters R and C
-        print('Merging clusters',R+1,'and',C+1,'with a similarity score of',value)
+        #print('Merging clusters',R+1,'and',C+1,'with a similarity score of',np.around(value,decimals=4))
+        print('Merging clusters','%3s'%str(R+1),'and','%3s'%str(C+1),'with a similarity score of',np.around(value,decimals=4))
         activeClusters[0,C]=0        
         ### 3. Save the resulting clustering and go back to 1 if the number of clusters >1
         mergingClusteringIndices = np.where(clusteringTable[:,k]==C+1)
@@ -407,6 +405,7 @@ def getSpectralClustering(bestClusteringMetric,clusteringTable,N_init, bkT, cvT,
     else:
         eigengaps[0]=0  
         kclusters = np.flip(np.argsort(eigengaps),axis=0)[0]+1  
+    
     nrElements = np.zeros([N_init,1])
     for k in np.arange(N_init):
         nrElements[k]=np.size(np.unique(clusteringTable[:,k]),0)
@@ -449,8 +448,7 @@ def performResegmentation(data, speechMapping,mask,finalClusteringTable,segmentT
         msize = np.minimum(modelSize,np.size(spkIdxs,0))
         w_init = np.ones([msize])/msize
         m_init = data[spkIdxs[np.random.randint(np.size(spkIdxs,0), size=(1, msize))[0]],:]
-        p_init = np.matlib.repmat(np.diag(np.linalg.inv(np.cov(data[spkIdxs].T))),msize,1)
-        gmm=mixture.GaussianMixture(n_components=msize,covariance_type='diag',weights_init=w_init,means_init=m_init,precisions_init=p_init,verbose=0)
+        gmm=mixture.GaussianMixture(n_components=msize,covariance_type='diag',weights_init=w_init,means_init=m_init,verbose=0)
         gmm.fit(data[spkIdxs,:])
         llkSpk = gmm.score_samples(data)
         llkSpkSmoothed = np.zeros([1,numberOfSpeechFeatures])      
@@ -486,7 +484,7 @@ def performResegmentation(data, speechMapping,mask,finalClusteringTable,segmentT
     finalClusteringTableResegmentation = np.vstack((finalClusteringTableResegmentation,segOut[(changes[i]+1).astype(int)]))    
     return finalClusteringTableResegmentation,finalSegmentTable  
 
-def getSegmentationFile( format, frameshift,finalSegmentTable, finalClusteringTable, showName, filename, outputPath, outputExt ):
+def getSegmentationFile(format, frameshift,finalSegmentTable, finalClusteringTable, showName, filename, outputPath, outputExt):
     numberOfSpeechFeatures = finalSegmentTable[-1,2].astype(int)+1
     solutionVector = np.zeros([1,numberOfSpeechFeatures])
     for i in np.arange(np.size(finalSegmentTable,0)):

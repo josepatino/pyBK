@@ -9,11 +9,11 @@ from diarizationFunctions import *
 import numpy as np
 
 def runDiarization(showName,config):      
-    #Extracting features   
+    print('showName\t\t',showName)
+    print('Extracting features')  
     allData=extractFeatures(config['PATH']['audio']+showName+config['EXTENSION']['audio'],config.getfloat('FEATURES','framelength'),config.getfloat('FEATURES','frameshift'),config.getint('FEATURES','nfilters'),config.getint('FEATURES','ncoeff'))    
     nFeatures = allData.shape[0]    
-    print('\nshowName\t\t',showName,'\n')
-    print('Initial number of features\t',nFeatures,'\n')    
+    print('Initial number of features\t',nFeatures)    
     if os.path.isfile(config['PATH']['UEM']+showName+config['EXTENSION']['UEM']):
         maskUEM = readUEMfile(config['PATH']['UEM'],showName,config['EXTENSION']['UEM'],nFeatures,config.getfloat('FEATURES','frameshift'))
     else:
@@ -33,7 +33,7 @@ def runDiarization(showName,config):
     numberOfSegments=np.size(segmentTable,0)
     print('Number of speech features\t',nSpeechFeatures)
     #create the KBM
-    print('\nTraining the KBM... ')
+    print('Training the KBM... ')
     #set the window rate in order to obtain "minimumNumberOfInitialGaussians" gaussians
     if np.floor((nSpeechFeatures-config.getint('KBM','windowLength'))/config.getint('KBM','minimumNumberOfInitialGaussians')) < config.getint('KBM','maximumKBMWindowRate'):
         windowRate = int(np.floor((np.size(data,0)-config.getint('KBM','windowLength'))/config.getint('KBM','minimumNumberOfInitialGaussians')))
@@ -44,9 +44,9 @@ def runDiarization(showName,config):
         kbmSize = int(np.floor(poolSize*config.getfloat('KBM','relKBMsize')))
     else:
         kbmSize = int(config.getint('KBM','kbmSize'))        
-    print('\nTraining pool of',int(poolSize),'gaussians with a rate of',int(windowRate),'frames\n')    
+    print('Training pool of',int(poolSize),'gaussians with a rate of',int(windowRate),'frames')    
     kbm, gmPool = trainKBM(data,config.getint('KBM','windowLength'),windowRate,kbmSize )    
-    print('Selected',kbmSize,'gaussians from the pool\n')    
+    print('Selected',kbmSize,'gaussians from the pool')    
     Vg = getVgMatrix(data,gmPool,kbm,config.getint('BINARY_KEY','topGaussiansPerFrame'))    
     print('Computing binary keys for all segments... ')
     segmentBKTable, segmentCVTable = getSegmentBKs(segmentTable, kbmSize, Vg, config.getfloat('BINARY_KEY','bitsPerSegmentFactor'), speechMapping)    
@@ -65,7 +65,7 @@ def runDiarization(showName,config):
         bestClusteringID = getSpectralClustering(config['CLUSTERING_SELECTION']['metric_clusteringSelection'],finalClusteringTable,config.getint('CLUSTERING','N_init'),segmentBKTable,segmentCVTable,k,config.getint('CLUSTERING_SELECTION','sigma'),config.getint('CLUSTERING_SELECTION','percentile'),config.getint('CLUSTERING_SELECTION','maxNrSpeakers'))+1        
     print('Best clustering:\t',bestClusteringID.astype(int))
     print('Number of clusters:\t',np.size(np.unique(finalClusteringTable[:,bestClusteringID.astype(int)-1]),0))    
-    if config.getint('RESEGMENTATION','resegmentation'):
+    if config.getint('RESEGMENTATION','resegmentation') and np.size(np.unique(finalClusteringTable[:,bestClusteringID.astype(int)-1]),0)>1:
         print('Performing GMM-ML resegmentation...')
         finalClusteringTableResegmentation,finalSegmentTable = performResegmentation(data,speechMapping, mask,finalClusteringTable[:,bestClusteringID.astype(int)-1],segmentTable,config.getint('RESEGMENTATION','modelSize'),config.getint('RESEGMENTATION','nbIter'),config.getint('RESEGMENTATION','smoothWin'),nSpeechFeatures)
         print('done')
@@ -83,6 +83,8 @@ def runDiarization(showName,config):
             os.mkdir(outputPathInd)
         for i in np.arange(k):
             getSegmentationFile(config['OUTPUT']['format'],config.getfloat('FEATURES','frameshift'), segmentTable, finalClusteringTable[:,i], showName, showName+'_'+str(np.size(np.unique(finalClusteringTable[:,i]),0))+'_spk', outputPathInd, config['EXTENSION']['output'])        
+            
+    print('\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
     
 if __name__ == "__main__":     
     # If a config file in INI format is passed by argument line then it's used. 
@@ -107,5 +109,6 @@ if __name__ == "__main__":
         os.mkdir(config['PATH']['output'])
 
     # Files are diarized one by one
-    for showName in showNameList:
+    for idx,showName in enumerate(showNameList):
+        print('\nProcessing file',idx+1,'/',len(showNameList))
         runDiarization(showName,config)

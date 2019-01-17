@@ -1,2 +1,2 @@
-*.m linguist-language=Python
-eval/* linguist-vendored
+* linguist-vendored
+*.py linguist-vendored=false

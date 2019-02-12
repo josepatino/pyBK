@@ -377,7 +377,7 @@ def getSpectralClustering(bestClusteringMetric,clusteringTable,N_init, bkT, cvT,
     # Similarity matrix smoothed through Gaussian filter
     simMatrix_1 = gaussian_filter(simMatrix,sigma)
     # Similarity matrix thresholded to the percentile-th components leaving a small amount instead of 0 following Google's implementation
-    thresholds = np.matlib.repmat(percentile*np.nanmax(simMatrix,1)/100,np.size(bkT,0),1).T
+    thresholds = np.tile(percentile*np.nanmax(simMatrix,1)/100,(np.size(bkT,0),1)).T
     simMatrix_2 = np.copy(simMatrix_1)
     mask = simMatrix_2<thresholds
     simMatrix_2[np.where(mask==True)] = simMatrix_2[np.where(mask==True)]*0.01
@@ -390,7 +390,7 @@ def getSpectralClustering(bestClusteringMetric,clusteringTable,N_init, bkT, cvT,
     # Similarity matrix diffussion
     simMatrix_4 = np.dot(simMatrix_3,simMatrix_3)   
     # Row-wise max normalization
-    simMatrix_5 = simMatrix_4 / np.matlib.repmat(simMatrix_4.max(axis=0),np.size(simMatrix_4,0),1).T
+    simMatrix_5 = simMatrix_4 / np.tile(simMatrix_4.max(axis=0),(np.size(simMatrix_4,0),1)).T
     # Decomposition in eigenvalues, we don't use eigenvectors for the moment
     eigenvalues,eigenvectors = np.linalg.eigh(simMatrix_5)
     new_N_init = np.minimum(maxNrSpeakers,N_init)
@@ -438,7 +438,7 @@ def performResegmentation(data, speechMapping,mask,finalClusteringTable,segmentT
         idxs = np.where(finalClusteringTable==spkID)[0]
         for l in np.arange(np.size(idxs,0)):
             speakerFeaturesIndxs = np.append(speakerFeaturesIndxs,np.arange(int(segmentTable[idxs][:][l,1]),int(segmentTable[idxs][:][l,2])+1))
-        formattedData = np.vstack((np.matlib.repmat(spkID,1,np.size(speakerFeaturesIndxs,0)),speakerFeaturesIndxs))
+        formattedData = np.vstack((np.tile(spkID,(1,np.size(speakerFeaturesIndxs,0))),speakerFeaturesIndxs))
         trainingData = np.hstack((trainingData,formattedData))
     
     llkMatrix = np.zeros([np.size(speakerIDs,0),numberOfSpeechFeatures])
@@ -475,11 +475,11 @@ def performResegmentation(data, speechMapping,mask,finalClusteringTable,segmentT
     finalClusteringTableResegmentation = np.empty([0,1])
     
     for i in np.arange(np.size(changes,0)):
-        addedRow = np.hstack((np.matlib.repmat(np.where(speechMapping==np.maximum(currentPoint,1))[0],1,2),  np.matlib.repmat(np.where(speechMapping==np.maximum(1,changes[i].astype(int)))[0],1,2)))
+        addedRow = np.hstack((np.tile(np.where(speechMapping==np.maximum(currentPoint,1))[0],(1,2)),  np.tile(np.where(speechMapping==np.maximum(1,changes[i].astype(int)))[0],(1,2))))
         finalSegmentTable = np.vstack((finalSegmentTable,addedRow[0]))    
         finalClusteringTableResegmentation = np.vstack((finalClusteringTableResegmentation,segOut[(changes[i]).astype(int)]))
         currentPoint = changes[i]+1
-    addedRow = np.hstack((np.matlib.repmat(np.where(speechMapping==currentPoint)[0],1,2),  np.matlib.repmat(np.where(speechMapping==numberOfSpeechFeatures)[0],1,2)))
+    addedRow = np.hstack((np.tile(np.where(speechMapping==currentPoint)[0],(1,2)),  np.tile(np.where(speechMapping==numberOfSpeechFeatures)[0],(1,2))))
     finalSegmentTable = np.vstack((finalSegmentTable,addedRow[0]))
     finalClusteringTableResegmentation = np.vstack((finalClusteringTableResegmentation,segOut[(changes[i]+1).astype(int)]))    
     return finalClusteringTableResegmentation,finalSegmentTable  
@@ -520,4 +520,4 @@ def getSegmentationFile(format, frameshift,finalSegmentTable, finalClusteringTab
     outf = open(outputPath+filename+outputExt,"a")    
     outf.writelines(solution)
     outf.write('\n')
-    outf.close()   
+    outf.close()

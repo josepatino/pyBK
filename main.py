@@ -13,13 +13,19 @@ def runDiarization(showName,config):
     print('Extracting features')  
     allData=extractFeatures(config['PATH']['audio']+showName+config['EXTENSION']['audio'],config.getfloat('FEATURES','framelength'),config.getfloat('FEATURES','frameshift'),config.getint('FEATURES','nfilters'),config.getint('FEATURES','ncoeff'))    
     nFeatures = allData.shape[0]    
-    print('Initial number of features\t',nFeatures)    
+    print('Initial number of features\t',nFeatures) 
+    
     if os.path.isfile(config['PATH']['UEM']+showName+config['EXTENSION']['UEM']):
         maskUEM = readUEMfile(config['PATH']['UEM'],showName,config['EXTENSION']['UEM'],nFeatures,config.getfloat('FEATURES','frameshift'))
     else:
         print('UEM file does not exist. The complete audio content is considered.')
-        maskUEM = np.ones([1,nFeatures])
-    maskSAD = readSADfile(config['PATH']['SAD'],showName,config['EXTENSION']['SAD'],nFeatures,config.getfloat('FEATURES','frameshift'),config['GENERAL']['SADformat'])      
+        maskUEM = np.ones([1,nFeatures])     
+        
+    if os.path.isfile(config['PATH']['SAD']+showName+config['EXTENSION']['SAD']) and not(config.getint('GENERAL','performVAD')):
+        maskSAD = readSADfile(config['PATH']['SAD'],showName,config['EXTENSION']['SAD'],nFeatures,config.getfloat('FEATURES','frameshift'),config['GENERAL']['SADformat']) 
+    else:
+        print('SAD file does not exist or automatic VAD is enabled in the config. VAD is applied and saved at %s.\n'%(config['PATH']['SAD']+showName+'.lab'))
+        maskSAD = getSADfile(config,showName,nFeatures)
     mask = np.logical_and(maskUEM,maskSAD)    
     mask = mask[0][0:nFeatures]
     nSpeechFeatures=np.sum(mask)

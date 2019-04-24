@@ -11,7 +11,11 @@ import numpy as np
 def runDiarization(showName,config):      
     print('showName\t\t',showName)
     print('Extracting features')  
-    allData=extractFeatures(config['PATH']['audio']+showName+config['EXTENSION']['audio'],config.getfloat('FEATURES','framelength'),config.getfloat('FEATURES','frameshift'),config.getint('FEATURES','nfilters'),config.getint('FEATURES','ncoeff'))    
+    
+    if config.getint('GENERAL','performFeatureExtraction'):
+        allData=extractFeatures(config['PATH']['audio']+showName+config['EXTENSION']['audio'],config.getfloat('FEATURES','framelength'),config.getfloat('FEATURES','frameshift'),config.getint('FEATURES','nfilters'),config.getint('FEATURES','ncoeff'))    
+    else:
+        allData=getFeatures(config['PATH']['features']+showName+config['EXTENSION']['features'])
     nFeatures = allData.shape[0]    
     print('Initial number of features\t',nFeatures) 
     

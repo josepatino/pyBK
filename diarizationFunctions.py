@@ -11,9 +11,12 @@ def extractFeatures(audioFile,framelength,frameshift,nfilters,ncoeff):
     import librosa
     y, sr = librosa.load(audioFile,sr=None)
     frame_length_inSample=framelength*sr
-    hop = frameshift*sr
-    NFFT=2**np.ceil(np.log2(frame_length_inSample))
-    features=librosa.feature.mfcc(y=y, sr=sr,dct_type=2,n_mfcc=ncoeff,n_mels=nfilters,n_fft=int(NFFT),hop_length=int(hop),fmin=20,fmax=7600).T
+    hop = int(frameshift*sr)
+    NFFT=int(2**np.ceil(np.log2(frame_length_inSample)))
+    if sr>=16000:
+        features=librosa.feature.mfcc(y=y, sr=sr,dct_type=2,n_mfcc=ncoeff,n_mels=nfilters,n_fft=NFFT,hop_length=hop,fmin=20,fmax=7600).T
+    else:
+        features=librosa.feature.mfcc(y=y, sr=sr,dct_type=2,n_mfcc=ncoeff,n_mels=nfilters,n_fft=NFFT,hop_length=hop).T
     return features
 
 def getFeatures(featureFile):
@@ -93,7 +96,7 @@ def readSADfile(path,filename,ext,nFeatures,frameshift, format):
 
 def getSADfile(config,filename,nFeatures):
     
-    """ The following VAD applying procedure is adapted from the following repository
+    """ The following VAD applying procedure is adapted from the repository
     provided as part of the DIHARD II challenge speech enhancement system:    
     https://github.com/staplesinLA/denoising_DIHARD18/blob/master/main_get_vad.py"""
     
@@ -255,10 +258,10 @@ def trainKBM(data, windowLength, windowRate, kbmSize):
     numberOfComponents = int(np.floor((np.size(data,0)-windowLength)/windowRate))
     # Add new array for storing the mvn objects
     gmPool = []
-    likelihoodVector = np.zeros((int(numberOfComponents), 1))
-    muVector = np.zeros((int(numberOfComponents),np.size(data,1)))
-    sigmaVector = np.zeros((int(numberOfComponents),np.size(data,1)))    
-    for i in range(int(numberOfComponents)):
+    likelihoodVector = np.zeros((numberOfComponents, 1))
+    muVector = np.zeros((numberOfComponents,np.size(data,1)))
+    sigmaVector = np.zeros((numberOfComponents,np.size(data,1)))    
+    for i in range(numberOfComponents):
         mu = np.mean(data[np.arange((i*windowRate),(i*windowRate+windowLength),1,int)],axis=0)
         std = np.std(data[np.arange((i*windowRate),(i*windowRate+windowLength),1,int)],axis=0)
         muVector[i], sigmaVector[i] = mu, std
@@ -474,7 +477,7 @@ def getBestClustering(bestClusteringMetric, bkT, cvT, clusteringTable, n ):
         indices = np.argsort(-overallMean)
         overallMean = np.zeros([1,np.size(bkT,1)])
         overallMean[0,indices[np.arange(nBitsTol).astype(int)]]=1
-        distances = cdist(np.expand_dims(overallMean,axis=0),bkT,bestClusteringMetric)    
+        distances = cdist(overallMean,bkT,bestClusteringMetric)    
     distances2 = np.square(distances)    
     wss[0,n-1] = np.sum(distances2)    
     for i in np.arange(n-1):
@@ -487,7 +490,7 @@ def getBestClustering(bestClusteringMetric, bkT, cvT, clusteringTable, n ):
             if bestClusteringMetric=='cosine':
                 distances = cdist(meanVector,cvT[clusterIDsIndex,:][0],bestClusteringMetric)
             elif bestClusteringMetric=='jaccard':
-                indices = np.argsort(-meanVector)
+                indices = np.argsort(-meanVector[0,:])
                 meanVector = np.zeros([1,np.size(bkT,1)])
                 meanVector[0,indices[np.arange(nBitsTol).astype(int)]]=1
                 distances = cdist(meanVector,bkT[clusterIDsIndex,:][0],bestClusteringMetric)

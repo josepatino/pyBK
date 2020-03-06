@@ -466,7 +466,7 @@ def binaryKeySimilarity_cdist(clusteringMetric,bkT1, cvT1, bkT2, cvT2):
       print('Clustering metric must be cosine or jaccard')  
     return S
   
-def getBestClustering(bestClusteringMetric, bkT, cvT, clusteringTable, n ):
+def getBestClustering(bestClusteringMetric, bkT, cvT, clusteringTable, n, maxNrSpeakers):
     from scipy.spatial.distance import cdist  
     wss = np.zeros([1,n])
     overallMean = np.mean(cvT,0)    
@@ -511,6 +511,10 @@ def getBestClustering(bestClusteringMetric, bkT, cvT, clusteringTable, n ):
     vecToLine = vecFromFirst - vecFromFirstParallel
     distToLine = np.sqrt(np.sum(np.square(vecToLine),axis=1))
     bestClusteringID = allCoord[np.argmax(distToLine)][0]
+    nrSpeakersPerSolution = np.zeros((clusteringTable.shape[1]))
+    for k in np.arange(clusteringTable.shape[1]):
+        nrSpeakersPerSolution[k] = np.size(np.unique(clusteringTable[:,k]))
+    bestClusteringID = np.maximum(np.where(nrSpeakersPerSolution==np.maximum(np.minimum(maxNrSpeakers,np.max(nrSpeakersPerSolution))-1,1))[0][0],bestClusteringID)
     return bestClusteringID
   
 def getSpectralClustering(bestClusteringMetric,clusteringTable,N_init, bkT, cvT, n, sigma, percentile,maxNrSpeakers):

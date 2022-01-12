@@ -514,7 +514,19 @@ def getBestClustering(bestClusteringMetric, bkT, cvT, clusteringTable, n, maxNrS
     nrSpeakersPerSolution = np.zeros((clusteringTable.shape[1]))
     for k in np.arange(clusteringTable.shape[1]):
         nrSpeakersPerSolution[k] = np.size(np.unique(clusteringTable[:,k]))
-    bestClusteringID = np.maximum(np.where(nrSpeakersPerSolution==np.maximum(np.minimum(maxNrSpeakers,np.max(nrSpeakersPerSolution))-1,1))[0][0],bestClusteringID)
+
+    maxAllowedSpeakers = np.maximum(
+        np.minimum(maxNrSpeakers, np.max(nrSpeakersPerSolution)), 1
+    ) - 1
+    firstAllowedClustering = np.min(
+        np.where(nrSpeakersPerSolution <= maxAllowedSpeakers)
+    )
+    # Note: clusters are ordered from most clusters to least, so this selects the bestClusteringID
+    # unless it has more than maxNrSpeakers nodes, in which case it selects firstAllowedClustering
+    bestClusteringID = np.maximum(
+        firstAllowedClustering,
+        bestClusteringID
+    )
     return bestClusteringID
   
 def getSpectralClustering(bestClusteringMetric,clusteringTable,N_init, bkT, cvT, n, sigma, percentile,maxNrSpeakers):
